@@ -1,6 +1,6 @@
 {
   "name": "druxt-umami-ui",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "The Umami demo's look for a Nuxt 2 site: its theme and presentational Vue components, on Bootstrap 4.",
   "license": "MIT",
   "main": "module.js",

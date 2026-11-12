@@ -143,14 +143,6 @@ Under `druxtUmamiUi` in `nuxt.config.js`, or as module options:
 A `bootstrapVue` key in `nuxt.config.js` is merged into the BootstrapVue
 options the module sets.
 
-## Upgrading from 0.1
-
-0.2.0 holds the theme and the components only. The Druxt wrapper components,
-the layouts, the i18n plugin with its locales, and the `utils/` helpers
-moved into the site; `druxt-drupal-mock-umami` shows them as site source.
-The `layouts` option is gone, and so are the `vue-i18n` dependency and the
-Druxt peer dependencies.
-
 ## Build
 
 ```sh
