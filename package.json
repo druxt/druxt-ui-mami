@@ -1,5 +1,5 @@
 {
-  "name": "druxt-umami-ui",
+  "name": "druxt-ui-mami",
   "version": "0.1.0",
   "description": "The Umami demo's look for a Nuxt 2 site: its theme and presentational Vue components, on Bootstrap 4.",
   "license": "MIT",
@@ -32,10 +32,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/druxt/druxt-umami-ui.git"
+    "url": "git+https://github.com/druxt/druxt-ui-mami.git"
   },
-  "homepage": "https://github.com/druxt/druxt-umami-ui#readme",
+  "homepage": "https://github.com/druxt/druxt-ui-mami#readme",
   "bugs": {
-    "url": "https://github.com/druxt/druxt-umami-ui/issues"
+    "url": "https://github.com/druxt/druxt-ui-mami/issues"
   }
 }

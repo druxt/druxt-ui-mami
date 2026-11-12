@@ -6,27 +6,27 @@ const FONTS =
 const r = (...parts) => path.resolve(__dirname, ...parts)
 
 /**
- * DruxtUmamiUi: the Umami look for a Nuxt 2 site.
+ * DruxtUiMami: the Umami look for a Nuxt 2 site.
  *
  * Adds the compiled theme on Bootstrap 4, its fonts, BootstrapVue with the
  * plugins the components use, and the `Umami*` components. The components
  * take props and slots only; the site maps its content onto them.
  *
- * Options, under `druxtUmamiUi` in nuxt.config.js or as module options:
+ * Options, under `druxtUiMami` in nuxt.config.js or as module options:
  * - `bootstrapCSS` (true): add Bootstrap 4's CSS. Turn off to bring your own.
  * - `fonts` (true): link the Google Fonts the theme names.
  */
-module.exports = function DruxtUmamiUiModule(moduleOptions = {}) {
+module.exports = function DruxtUiMamiModule(moduleOptions = {}) {
   const options = {
     bootstrapCSS: true,
     fonts: true,
-    ...(this.options.druxtUmamiUi || {}),
+    ...(this.options.druxtUiMami || {}),
     ...moduleOptions,
   }
 
   // The components are Vue files in node_modules: transpiled like the
   // site's own, since they use syntax webpack 4 cannot parse.
-  this.options.build.transpile.push('druxt-umami-ui')
+  this.options.build.transpile.push('druxt-ui-mami')
 
   // Styles: Bootstrap 4 first, then the theme that re-skins it.
   if (options.bootstrapCSS) {

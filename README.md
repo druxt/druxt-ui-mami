@@ -1,9 +1,13 @@
-# druxt-umami-ui
+# druxt-ui-mami
 
 The look of the [Umami demo](https://umami.demo.druxtjs.org) for a Nuxt 2
 site: its theme, on Bootstrap 4, and the presentational Vue components that
 draw it. The components take props and slots only. They know nothing of
 Drupal or Druxt: a site maps its own content onto them.
+
+It's a demo's UI, not a general-purpose kit, hence the name. This `0.x` branch
+is the Vue 2 package for Druxt 0.x and 1.x sites, and follows their unscoped
+`druxt-*` naming. The Druxt 2.x version will be `@druxt/ui-mami`.
 
 ## Install
 
@@ -11,7 +15,7 @@ The package isn't on npm yet. Install it from GitHub, as a tarball of a
 commit on `0.x`:
 
 ```sh
-npm install https://codeload.github.com/druxt/druxt-umami-ui/tar.gz/<commit>
+npm install https://codeload.github.com/druxt/druxt-ui-mami/tar.gz/<commit>
 ```
 
 The compiled theme, `dist/umami.css`, is committed, so the tarball needs no
@@ -38,7 +42,7 @@ components:
 ```js
 // nuxt.config.js
 export default {
-  modules: ['druxt-umami-ui'],
+  modules: ['druxt-ui-mami'],
 }
 ```
 
@@ -133,7 +137,7 @@ drawn in Druxt blue.
 
 ## Options
 
-Under `druxtUmamiUi` in `nuxt.config.js`, or as module options:
+Under `druxtUiMami` in `nuxt.config.js`, or as module options:
 
 | Option | Default | |
 | ------ | ------- | - |

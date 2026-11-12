@@ -45,7 +45,7 @@ $mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 // Bootstrap 4 breakpoints, which is what bootstrap-vue emits against.
 // Both header bars stick. The masthead offsets by exactly the demo bar's
 // height so the two stack rather than share a strip; both read this.
-// druxt-umami-ui: the demo bar is not part of this package, so nothing sits
+// druxt-ui-mami: the demo bar is not part of this package, so nothing sits
 // above the sticky masthead. The Umami demo sets 40px, its bar's height.
 $demo-bar-height: 0px;
 
