@@ -41,5 +41,13 @@
   },
   "devDependencies": {
     "sass": "~1.99.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/druxt/druxt-umami-ui.git"
+  },
+  "homepage": "https://github.com/druxt/druxt-umami-ui#readme",
+  "bugs": {
+    "url": "https://github.com/druxt/druxt-umami-ui/issues"
   }
 }
