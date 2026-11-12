@@ -1,0 +1,45 @@
+{
+  "name": "druxt-umami-ui",
+  "version": "0.1.0",
+  "description": "The Umami demo's look for a Druxt 0.x site: theme, layouts and Druxt wrapper components, read-only.",
+  "license": "MIT",
+  "main": "module.js",
+  "files": [
+    "components",
+    "dist",
+    "layouts",
+    "locales",
+    "plugins",
+    "utils",
+    "module.js"
+  ],
+  "scripts": {
+    "build": "sass --silence-deprecation=global-builtin --no-source-map --style=compressed src/scss/theme.scss dist/umami.css",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "druxt",
+    "drupal",
+    "nuxt",
+    "umami",
+    "theme"
+  ],
+  "dependencies": {
+    "bootstrap": "^4.6.2",
+    "bootstrap-vue": "^2.23.1",
+    "vue-i18n": "^8.28.2"
+  },
+  "peerDependencies": {
+    "drupal-jsonapi-params": "^2.3.0",
+    "druxt-blocks": "^0.18.0",
+    "druxt-breadcrumb": "^0.18.0",
+    "druxt-entity": "^0.29.0",
+    "druxt-router": "^0.32.0",
+    "druxt-site": ">=0.15.0 <0.16.0",
+    "druxt-views": "^0.23.0",
+    "nuxt": "^2.15.0"
+  },
+  "devDependencies": {
+    "sass": "~1.99.0"
+  }
+}

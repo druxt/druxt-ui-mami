@@ -1,0 +1,73 @@
+# druxt-umami-ui
+
+The look of the [Umami demo](https://umami.demo.druxtjs.org) for a Druxt 0.x
+site on Nuxt 2: its theme, its layouts and the Druxt wrapper components that
+render Drupal's Umami content. Read-only: no editing, sign-in or search.
+
+## Install
+
+```sh
+npm install github:druxt/druxt-umami-ui#0.x
+```
+
+Installing from git builds `dist/umami.css` on install (the `prepare` script
+compiles the Sass), so a site needs no Sass of its own.
+
+Add the module after `druxt-site`, and give Druxt the query settings the
+components expect:
+
+```js
+// nuxt.config.js
+export default {
+  modules: ['druxt-site', 'druxt-umami-ui'],
+  druxt: {
+    baseUrl: 'https://your-drupal-site',
+    site: { theme: 'umami' },
+    blocks: { query: { fields: [] } },
+    entity: { components: { fields: false }, query: { schema: true } },
+    menu: { query: { requiredOnly: true } },
+    views: { query: { bundleFilter: true } },
+  },
+}
+```
+
+Leave out a `pages/` directory, or keep it free of a catch-all page: the
+layout's main content block renders the route that `druxt-router` adds.
+
+## What it adds
+
+- `dist/umami.css`, the Umami theme, compiled. It re-skins Bootstrap 4.6,
+  which the module adds too, and names three Google Fonts (Newsreader,
+  Archivo, IBM Plex Mono), which the module links in the page head.
+- BootstrapVue, with the components and plugins the wrapper components use.
+- The default layout (the Umami regions and the phone menu drawer) and the
+  error layout. A site's own `layouts/default.vue` or `layouts/error.vue`
+  wins.
+- An i18n plugin, on `vue-i18n` 8, with English and Spanish strings. The
+  language comes from the path prefix, `/en` or `/es`.
+- The wrapper components, named as the Umami demo names them:
+  `components/druxt/entity/node/recipe/Full.vue` is
+  `DruxtEntityNodeRecipeFull`, and `components/app/MobileDrawer.vue` is
+  `AppMobileDrawer`. A component of the same name in the site's own
+  `components/` directory wins.
+
+## Options
+
+Under `druxtUmamiUi` in `nuxt.config.js`, or as module options:
+
+| Option | Default | |
+| ------ | ------- | - |
+| `bootstrapCSS` | `true` | Add Bootstrap 4's CSS. |
+| `fonts` | `true` | Link the theme's Google Fonts. |
+| `layouts` | `true` | Use the package's default and error layouts. |
+
+## Build
+
+```sh
+npm install
+npm run build
+```
+
+## License
+
+MIT, as the Umami demo it comes from.
