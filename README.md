@@ -6,12 +6,17 @@ render Drupal's Umami content. Read-only: no editing, sign-in or search.
 
 ## Install
 
+The package isn't on npm yet. Install it from GitHub, as a tarball of a
+commit on `0.x`:
+
 ```sh
-npm install github:druxt/druxt-umami-ui#0.x
+npm install https://codeload.github.com/druxt/druxt-umami-ui/tar.gz/<commit>
 ```
 
-Installing from git builds `dist/umami.css` on install (the `prepare` script
-compiles the Sass), so a site needs no Sass of its own.
+The compiled theme, `dist/umami.css`, is committed, so the tarball needs no
+build step, no git and no Sass. That is what lets it install in StackBlitz,
+which has no git. `npm run build` recompiles it from `src/scss/theme.scss`,
+and a change to the theme commits the rebuilt file with it.
 
 Add the module after `druxt-site`, and give Druxt the query settings the
 components expect:
