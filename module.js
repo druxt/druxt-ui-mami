@@ -1,4 +1,3 @@
-const fs = require('fs')
 const path = require('path')
 
 const FONTS =
@@ -7,24 +6,20 @@ const FONTS =
 const r = (...parts) => path.resolve(__dirname, ...parts)
 
 /**
- * DruxtUmamiUi: the Umami demo's look for a Druxt site.
+ * DruxtUmamiUi: the Umami look for a Nuxt 2 site.
  *
- * Adds the compiled theme and Bootstrap 4, BootstrapVue, the default and
- * error layouts, the i18n plugin, and the Druxt wrapper components, named as
- * the Umami demo names them (`DruxtEntityNodeRecipeFull`, `AppMobileDrawer`).
- * A component of the same name in the site's own `components/` wins.
+ * Adds the compiled theme on Bootstrap 4, its fonts, BootstrapVue with the
+ * plugins the components use, and the `Umami*` components. The components
+ * take props and slots only; the site maps its content onto them.
  *
  * Options, under `druxtUmamiUi` in nuxt.config.js or as module options:
  * - `bootstrapCSS` (true): add Bootstrap 4's CSS. Turn off to bring your own.
  * - `fonts` (true): link the Google Fonts the theme names.
- * - `layouts` (true): use the package's default and error layouts, unless
- *   the site has its own `layouts/default.vue` or `layouts/error.vue`.
  */
 module.exports = function DruxtUmamiUiModule(moduleOptions = {}) {
   const options = {
     bootstrapCSS: true,
     fonts: true,
-    layouts: true,
     ...(this.options.druxtUmamiUi || {}),
     ...moduleOptions,
   }
@@ -49,8 +44,8 @@ module.exports = function DruxtUmamiUiModule(moduleOptions = {}) {
     )
   }
 
-  // BootstrapVue, with only what the read-only components use. The theme
-  // brings Bootstrap's CSS itself, above.
+  // BootstrapVue, with what the components use. The theme brings
+  // Bootstrap's CSS itself, above.
   this.addModule([
     'bootstrap-vue/nuxt',
     {
@@ -69,41 +64,12 @@ module.exports = function DruxtUmamiUiModule(moduleOptions = {}) {
     },
   ])
 
-  // The frontend's own words, in the page's language.
-  this.options.plugins.push(r('plugins/i18n.js'))
-
-  // The wrapper components. `druxt/` keeps its path in the name, as the
-  // Umami demo's `~/components` does; `app/` is prefixed `App`.
+  // The components, by their file names (`UmamiMasthead`). Level 1, so a
+  // component of the same name in the site's own components wins.
   this.options.components = this.options.components ?? true
   this.nuxt.hook('components:dirs', (dirs) => {
-    dirs.push(
-      { path: r('components/druxt'), prefix: 'Druxt', level: 1 },
-      { path: r('components/app'), prefix: 'App', pathPrefix: false, level: 1 }
-    )
+    dirs.push({ path: r('components'), pathPrefix: false, level: 1 })
   })
-
-  // Layouts. DruxtSite adds its own default layout when the site has none,
-  // so these are set once every module has run.
-  if (options.layouts) {
-    const own = (name) =>
-      ['vue', 'js'].some((ext) =>
-        fs.existsSync(
-          path.resolve(
-            this.options.srcDir,
-            this.options.dir.layouts,
-            `${name}.${ext}`
-          )
-        )
-      )
-    this.nuxt.hook('modules:done', () => {
-      if (!own('default')) {
-        this.options.layouts.default = r('layouts/default.vue')
-      }
-      if (!own('error') && !this.options.ErrorPage) {
-        this.options.ErrorPage = r('layouts/error.vue')
-      }
-    })
-  }
 }
 
 module.exports.meta = require('./package.json')
