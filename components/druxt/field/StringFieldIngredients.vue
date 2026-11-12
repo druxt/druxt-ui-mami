@@ -1,13 +1,6 @@
 <template>
   <component :is="wrapper.component" v-bind="wrapper.props">
-    <!-- Label: Above -->
-    <div v-if="$scopedSlots['label-above']">
-      <h3>{{ schema.label.text }}</h3>
-    </div>
-
-    <!-- Label: Inline -->
-    <slot v-if="$scopedSlots['label-inline']" name="label-inline" />
-
+    <!-- No label: the recipe display heads this list itself. -->
     <!-- Items -->
     <b-list-group>
       <b-list-group-item v-for="(item, key) of items" :key="key">

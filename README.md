@@ -26,10 +26,15 @@ export default {
     blocks: { query: { fields: [] } },
     entity: { components: { fields: false }, query: { schema: true } },
     menu: { query: { requiredOnly: true } },
-    views: { query: { bundleFilter: true } },
   },
 }
 ```
+
+`entity.query.schema` is the setting the look depends on: without it an
+entity's fields do not follow its display, and teasers and cards have no
+image. The Umami demo also sets `views: { query: { bundleFilter: true } }`;
+leave that out against a backend that answers only recorded queries, such as
+decoupled-drupal-mock, where those requests find nothing.
 
 Leave out a `pages/` directory, or keep it free of a catch-all page: the
 layout's main content block renders the route that `druxt-router` adds.

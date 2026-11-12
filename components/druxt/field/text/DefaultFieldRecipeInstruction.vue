@@ -1,6 +1,6 @@
 <template>
   <component :is="wrapper.component" v-bind="wrapper.props">
-    <h3 v-if="$scopedSlots['label-above']">{{ schema.label.text }}</h3>
+    <!-- No label: the recipe display heads the method itself. -->
 
     <!-- Prose before the list, such as a note on preparation. -->
     <!-- eslint-disable vue/no-v-html -->

@@ -4773,8 +4773,11 @@ html.druxt-inspector {
 }
 
 // The band whose page draws its own head: room for the tab bar, no more.
+// The Umami demo spaces its View and Edit tabs from the masthead here. This
+// package renders no tabs, so a page that draws its own head meets the
+// masthead directly.
 .band.band--flush {
-  padding-top: 1.5rem;
+  padding-top: 0;
 }
 
 // ── JSON:API drawer ──────────────────────────────────────────────────────────
