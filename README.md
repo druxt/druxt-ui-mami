@@ -118,7 +118,7 @@ default slot. A link target (`to`) is a route string or object.
 - `UmamiStatGrid`: a row of figures, each a label over its value. Prop `stats` (`{ label, value }` each).
 - `UmamiRecipeBody`: ingredients beside the method, with tags under it. Props `ingredientsHeading`, `methodHeading`. Slots `#ingredients`, `#method`, `#tags`.
 - `UmamiIngredients`: a list of ingredients. Prop `items` (text).
-- `UmamiMethodSteps`: numbered steps from a method's HTML list, with the prose around it kept. Prop `html`. Renders no element of its own.
+- `UmamiMethodSteps`: numbered steps from the first ordered list in a method's HTML. Everything around that list stays prose, other lists included. Prop `html`. Renders no element of its own.
 - `UmamiIconStat`: a figure under an icon. Props `icon` (`clock`, `people`, `puzzle`, `stopwatch`), `label`, `value`, `unit`. Renders no element of its own.
 - `UmamiTag`: a tag, a linked badge. Props `label`, `to`.
 - `UmamiArticle`: an article: photograph, kicker, title, byline, date, body, tags and what follows. Props `title`, `kicker`, `byline`, `date`, `rail` (the left margin's lines, from lg). Slots `#media`, `#body`, `#tags`, `#more`, `#note`.

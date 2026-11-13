@@ -18,22 +18,27 @@ export default {
 
   render(h, { props }) {
     const html = props.html || ''
-    const list = html.match(/(?<=<li>).*?(?=<\/li>)/g)
-    if (!list) {
+
+    // The first ordered list holds the steps. Any other list, ordered or not,
+    // is prose like the rest.
+    const list = html.match(/<ol(?:\s[^>]*)?>([\s\S]*?)<\/ol>/i)
+    const items = list
+      ? [...list[1].matchAll(/<li(?:\s[^>]*)?>([\s\S]*?)<\/li>/gi)].map(
+          ([, item]) => item
+        )
+      : []
+    if (!items.length) {
       return prose(h, html)
     }
 
     // The HTML around the list, which the steps do not carry.
-    const start = html.search(/<ol[\s>]/i)
-    const end = html.search(/<\/ol>/i)
-    const before = start < 0 || end < 0 ? '' : html.slice(0, start).trim()
-    const after =
-      start < 0 || end < 0 ? '' : html.slice(end + '</ol>'.length).trim()
+    const before = html.slice(0, list.index).trim()
+    const after = html.slice(list.index + list[0].length).trim()
 
     const steps = h(
       'ol',
       { staticClass: 'method-steps' },
-      list.map((item, key) =>
+      items.map((item, key) =>
         h('li', { key, staticClass: 'method-step' }, [
           h('span', { staticClass: 'method-step__n' }, String(key + 1)),
           ' ',
