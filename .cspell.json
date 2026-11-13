@@ -1,0 +1,46 @@
+{
+  "version": "0.2",
+  "language": "en,en-GB",
+  "files": ["**/*.{js,mjs,vue,json,jsonc,md,yml,yaml,scss}"],
+  "dictionaryDefinitions": [
+    {
+      "name": "project-words",
+      "path": "./.cspell-project-words.txt"
+    },
+    {
+      "name": "test-fixture-words",
+      "path": "./test/.cspell-fixture-words.txt"
+    }
+  ],
+  "dictionaries": [
+    "project-words",
+    "bash",
+    "css",
+    "html",
+    "misc",
+    "node",
+    "npm",
+    "softwareTerms",
+    "typescript"
+  ],
+  "ignorePaths": [
+    ".git/",
+    "node_modules/",
+    "coverage/",
+    "reports/",
+    "dist/",
+    ".vale/",
+    "package-lock.json",
+    "**/CHANGELOG.md",
+    "*.svg",
+    "*.png",
+    "*.snap"
+  ],
+  "useGitignore": true,
+  "overrides": [
+    {
+      "filename": "test/**",
+      "dictionaries": ["test-fixture-words"]
+    }
+  ]
+}

@@ -139,10 +139,10 @@ drawn in Druxt blue.
 
 Under `druxtUiMami` in `nuxt.config.js`, or as module options:
 
-| Option | Default | |
-| ------ | ------- | - |
-| `bootstrapCSS` | `true` | Add Bootstrap 4's CSS. |
-| `fonts` | `true` | Link the theme's Google Fonts. |
+| Option         | Default |                                |
+| -------------- | ------- | ------------------------------ |
+| `bootstrapCSS` | `true`  | Add Bootstrap 4's CSS.         |
+| `fonts`        | `true`  | Link the theme's Google Fonts. |
 
 A `bootstrapVue` key in `nuxt.config.js` is merged into the BootstrapVue
 options the module sets.

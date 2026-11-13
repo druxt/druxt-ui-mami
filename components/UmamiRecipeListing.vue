@@ -18,7 +18,9 @@
           :key="option.value"
           :pressed="difficulty === option.value"
           size="sm"
-          :variant="difficulty === option.value ? 'primary' : 'outline-secondary'"
+          :variant="
+            difficulty === option.value ? 'primary' : 'outline-secondary'
+          "
           @click="
             $emit(
               'update:difficulty',

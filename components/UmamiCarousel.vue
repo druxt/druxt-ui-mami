@@ -90,9 +90,15 @@ export default {
     previousLabel: { type: String, default: 'Previous slide' },
     nextLabel: { type: String, default: 'Next slide' },
     /** A slide's name, from its position and the count. */
-    positionLabel: { type: Function, default: (n, count) => `${n} of ${count}` },
+    positionLabel: {
+      type: Function,
+      default: (n, count) => `${n} of ${count}`,
+    },
     /** A bar's name, from its position and its slide's title. */
-    slideLabel: { type: Function, default: (n, title) => `Slide ${n}: ${title}` },
+    slideLabel: {
+      type: Function,
+      default: (n, title) => `Slide ${n}: ${title}`,
+    },
   },
 
   data: () => ({
