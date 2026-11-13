@@ -73,14 +73,29 @@ describe('UmamiBanner', () => {
     expect(wrapper.find('img').attributes('style')).toBeUndefined()
   })
 
-  test('measures an image that loaded before it mounted', () => {
-    const complete = jest
-      .spyOn(window.HTMLImageElement.prototype, 'complete', 'get')
-      .mockReturnValue(true)
-    const hold = jest.spyOn(UmamiBanner.methods, 'hold')
-    mount(UmamiBanner, { propsData: props })
-    expect(hold).toHaveBeenCalledTimes(1)
-    complete.mockRestore()
+  test('holds an image that loaded before it mounted, with no load event', async () => {
+    // A server-rendered image can finish loading before hydration, so its
+    // load event has already fired by the time the component mounts.
+    const spies = [
+      jest
+        .spyOn(window.HTMLImageElement.prototype, 'complete', 'get')
+        .mockReturnValue(true),
+      jest
+        .spyOn(window.HTMLImageElement.prototype, 'naturalWidth', 'get')
+        .mockReturnValue(800),
+      jest
+        .spyOn(window.Element.prototype, 'clientWidth', 'get')
+        .mockReturnValue(1200),
+    ]
+    try {
+      const wrapper = mount(UmamiBanner, { propsData: props })
+      await wrapper.vm.$nextTick()
+      const img = wrapper.find('img')
+      expect(img.classes()).toContain('banner__media--held')
+      expect(img.attributes('style')).toBe('width: 800px;')
+    } finally {
+      spies.forEach((spy) => spy.mockRestore())
+    }
   })
 
   test('re-measures on resize, and stops watching when destroyed', async () => {
@@ -106,12 +121,6 @@ describe('UmamiBanner', () => {
 
     wrapper.destroy()
     expect(disconnect).toHaveBeenCalled()
-  })
-
-  test('does nothing on a load with no image', () => {
-    const wrapper = mount(UmamiBanner)
-    wrapper.vm.hold()
-    expect(wrapper.vm.held).toBe(0)
   })
 
   test('carries the classes the theme styles', () => {

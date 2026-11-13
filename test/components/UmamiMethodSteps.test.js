@@ -81,6 +81,52 @@ describe('UmamiMethodSteps', () => {
     ).toEqual(['Mix the\nflour.', 'Knead.'])
   })
 
+  test('keeps a list nested in a step inside that step', () => {
+    const host = mountFunctional(UmamiMethodSteps, {
+      html: '<ol><li>Mix.<ol><li>Knead.</li></ol>Rest.</li><li>Bake.</li></ol><p>Serve.</p>',
+    })
+    expect(steps(host)).toEqual([
+      '<span class="method-step__text">Mix.<ol><li>Knead.</li></ol>Rest.</span>',
+      '<span class="method-step__text">Bake.</span>',
+    ])
+    expect(host.findAll('li.method-step')).toHaveLength(2)
+    expect(host.find('.method-prose').element.innerHTML).toBe('<p>Serve.</p>')
+  })
+
+  test('keeps an unordered list nested in a step inside that step', () => {
+    const host = mountFunctional(UmamiMethodSteps, {
+      html: '<OL><LI>Mix:<ul><li>flour</li><li>water</li></ul></LI><LI>Bake.</LI></OL>',
+    })
+    expect(steps(host)).toEqual([
+      '<span class="method-step__text">Mix:<ul><li>flour</li><li>water</li></ul></span>',
+      '<span class="method-step__text">Bake.</span>',
+    ])
+  })
+
+  test('ends an item whose closing tag is left out at the next item', () => {
+    const host = mountFunctional(UmamiMethodSteps, {
+      html: '<ol><li>Mix.<li>Bake.</ol>',
+    })
+    expect(
+      host.findAll('.method-step__text').wrappers.map((s) => s.text())
+    ).toEqual(['Mix.', 'Bake.'])
+  })
+
+  test('renders an ordered list that never closes as prose', () => {
+    const html = '<ol><li>Mix.</li><li>Bake.</li>'
+    const host = mountFunctional(UmamiMethodSteps, { html })
+    expect(host.find('.method-steps').exists()).toBe(false)
+    expect(host.find('.method-prose').element.innerHTML).toBe(
+      '<ol><li>Mix.</li><li>Bake.</li></ol>'
+    )
+  })
+
+  test('does not read an <old> or <link> tag as a list', () => {
+    const html = '<p>An <old>tag</old> and <link rel="x"> here.</p>'
+    const host = mountFunctional(UmamiMethodSteps, { html })
+    expect(host.find('.method-steps').exists()).toBe(false)
+  })
+
   test('carries the classes the theme styles', () => {
     const host = mountFunctional(UmamiMethodSteps, {
       html: `<p>Before.</p>${method}`,

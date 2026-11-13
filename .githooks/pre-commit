@@ -7,4 +7,8 @@
 # strips them, and any new test that shells out to git has to do the same.
 set -e
 npm run --silent lint
+# lint:private reads the working tree. The commit is made from the index, so
+# the staged content is checked too: a private URL that is staged and then
+# removed from the working tree alone would pass the check above.
+node scripts/lint-private-refs.mjs --staged
 npm test --silent

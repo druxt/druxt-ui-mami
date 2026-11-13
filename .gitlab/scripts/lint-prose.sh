@@ -16,9 +16,13 @@
 # one nobody can act on without rewriting the branch. The merge request
 # that introduced them is where the gate applies.
 #
-# Description: MERGE_REQUEST_DESCRIPTION, then CI_MERGE_REQUEST_DESCRIPTION.
-# A merge request pipeline with neither is refused, as check-attribution.sh
-# does and for the same reason.
+# Description: fetched from the API when GITLAB_API_TOKEN, CI_API_V4_URL,
+# CI_PROJECT_ID and CI_MERGE_REQUEST_IID are all set, else
+# MERGE_REQUEST_DESCRIPTION, then CI_MERGE_REQUEST_DESCRIPTION. GitLab cuts
+# that variable at 2700 characters, so one that reaches the cut is refused
+# rather than linted as if it were whole. A merge request pipeline with no
+# description is refused too, as check-attribution.sh does and for the same
+# reason.
 #
 # Environment:
 #   VALE_BIN          path to vale; PATH otherwise. See install-vale.sh.
@@ -42,7 +46,7 @@ for arg in "$@"; do
   case "$arg" in
     --all) all=1 ;;
     --skip-commits) skip_commits=1 ;;
-    -h|--help) sed -n '2,28p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) base="$arg" ;;
   esac
 done
@@ -131,21 +135,51 @@ done
 
 # A review bot appends its own summary to the description. Nobody wrote it and
 # nobody can keep it in the project voice, so the generated block goes before
-# the rest of the description is linted. An unterminated block is left alone,
-# so a stray marker cannot silently drop real prose.
+# the rest of the description is linted. A block is held back until its end
+# marker arrives, and printed after all if the input ends first, so a stray
+# start marker cannot silently drop real prose.
 strip_generated() {
   awk '
-    /<!-- end of auto-generated comment:/ { skip = 0; next }
-    /<!-- This is an auto-generated comment:/ { skip = 1 }
-    skip == 0 { print }
+    held == 0 && /<!-- This is an auto-generated comment:/ { held = 1; buffer = "" }
+    held == 1 {
+      buffer = buffer $0 "\n"
+      if (/<!-- end of auto-generated comment:/) { held = 0; buffer = "" }
+      next
+    }
+    { print }
+    END { if (held == 1) printf "%s", buffer }
   '
 }
 
+# The full description from the API, or nothing when it cannot be had.
+fetch_description() {
+  [ -n "${GITLAB_API_TOKEN:-}" ] && [ -n "${CI_API_V4_URL:-}" ] \
+    && [ -n "${CI_PROJECT_ID:-}" ] && [ -n "${CI_MERGE_REQUEST_IID:-}" ] || return 1
+  local payload
+  payload="$(curl -sSf --retry 3 --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
+    "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}" 2>/dev/null)" || return 1
+  if command -v python3 >/dev/null 2>&1; then
+    printf '%s' "$payload" | python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin).get("description") or "")'
+  elif command -v node >/dev/null 2>&1; then
+    printf '%s' "$payload" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>process.stdout.write(JSON.parse(d).description||""))'
+  else
+    return 1
+  fi
+}
+
 description_state="no description"
-if [ -n "${MERGE_REQUEST_DESCRIPTION+x}" ]; then
+if description="$(fetch_description)"; then
+  printf '%s\n' "$description" | strip_generated > "$inputs/merge-request.md"
+  description_state="the merge request description"
+elif [ -n "${MERGE_REQUEST_DESCRIPTION+x}" ]; then
   printf '%s\n' "$MERGE_REQUEST_DESCRIPTION" | strip_generated > "$inputs/merge-request.md"
   description_state="the merge request description"
 elif [ -n "${CI_MERGE_REQUEST_DESCRIPTION+x}" ]; then
+  if [ "${#CI_MERGE_REQUEST_DESCRIPTION}" -ge 2700 ]; then
+    echo "[ERROR] CI_MERGE_REQUEST_DESCRIPTION is ${#CI_MERGE_REQUEST_DESCRIPTION} characters, so GitLab has cut it at 2700 and its end is unread." >&2
+    echo "        Set GITLAB_API_TOKEN so the full description is fetched." >&2
+    exit 2
+  fi
   printf '%s\n' "$CI_MERGE_REQUEST_DESCRIPTION" | strip_generated > "$inputs/merge-request.md"
   description_state="the merge request description"
 elif [ -n "${CI_MERGE_REQUEST_IID:-}" ]; then

@@ -14,7 +14,13 @@
 #   AI_TELLS_VERSION   pinned below. Same rule: override both or neither.
 #   AI_TELLS_SHA256    expected checksum of the style package archive.
 #
-# Exit codes: 0 installed or already present, 1 checksum mismatch, 2 cannot run.
+# A cache holds the verified archives, never only the unpacked result. Every
+# run checks the cached archive against the pinned checksum and unpacks Vale
+# and the styles from it again, so nothing restored from a cache runs without
+# being verified first. A cached archive that fails the check is downloaded
+# again.
+#
+# Exit codes: 0 installed, 1 checksum mismatch, 2 cannot run.
 
 set -euo pipefail
 
@@ -80,19 +86,27 @@ fetch() {
   curl -sSfL --retry 3 -o "$2" "$1"
 }
 
+# Leaves a verified copy of <url> at <path>: the cached one when it matches
+# <sha256>, otherwise a fresh download, which must match too.
+obtain() {
+  local url="$1" path="$2" expected="$3"
+  if [ -f "$path" ] && verify "$path" "$expected" 2>/dev/null; then
+    echo "using the cached $(basename "$path"), checksum verified"
+    return 0
+  fi
+  mkdir -p "$(dirname "$path")"
+  fetch "$url" "$path"
+  verify "$path" "$expected"
+}
+
 # --- Vale --------------------------------------------------------------------
 
-if [ -x "$bin_dir/vale" ] && "$bin_dir/vale" --version 2>/dev/null | grep -q "$vale_version"; then
-  echo "vale ${vale_version} already installed in ${bin_dir}"
-else
-  archive="$work/vale.tar.gz"
-  fetch "https://github.com/errata-ai/vale/releases/download/v${vale_version}/vale_${vale_version}_${asset}.tar.gz" "$archive"
-  verify "$archive" "$vale_sha256" || exit 1
-  tar -xzf "$archive" -C "$work" vale
-  mkdir -p "$bin_dir"
-  install -m 0755 "$work/vale" "$bin_dir/vale"
-  echo "vale ${vale_version} installed in ${bin_dir}"
-fi
+archive="$bin_dir/.vale_${vale_version}_${asset}.tar.gz"
+obtain "https://github.com/errata-ai/vale/releases/download/v${vale_version}/vale_${vale_version}_${asset}.tar.gz" \
+  "$archive" "$vale_sha256" || exit 1
+tar -xzf "$archive" -C "$work" vale
+install -m 0755 "$work/vale" "$bin_dir/vale"
+echo "vale ${vale_version} installed in ${bin_dir}"
 
 # --- ai-tells ----------------------------------------------------------------
 
@@ -100,15 +114,9 @@ if [ -z "$styles_dir" ]; then
   exit 0
 fi
 
-marker="$styles_dir/ai-tells/.installed-version"
-if [ -f "$marker" ] && [ "$(cat "$marker")" = "$ai_tells_version" ]; then
-  echo "ai-tells ${ai_tells_version} already installed in ${styles_dir}"
-  exit 0
-fi
-
-zip="$work/ai-tells.zip"
-fetch "https://github.com/tbhb/vale-ai-tells/releases/download/v${ai_tells_version}/ai-tells.zip" "$zip"
-verify "$zip" "$ai_tells_sha256" || exit 1
+zip="$bin_dir/.ai-tells-${ai_tells_version}.zip"
+obtain "https://github.com/tbhb/vale-ai-tells/releases/download/v${ai_tells_version}/ai-tells.zip" \
+  "$zip" "$ai_tells_sha256" || exit 1
 
 # The package is a zip. Not every image has unzip, and every image that runs
 # this has one of the others.
@@ -130,5 +138,4 @@ fi
 mkdir -p "$styles_dir"
 rm -rf "$styles_dir/ai-tells"
 cp -R "$work/unpacked/ai-tells/styles/ai-tells" "$styles_dir/ai-tells"
-printf '%s\n' "$ai_tells_version" > "$marker"
 echo "ai-tells ${ai_tells_version} installed in ${styles_dir}"

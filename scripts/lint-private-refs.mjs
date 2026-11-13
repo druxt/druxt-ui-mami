@@ -14,6 +14,13 @@
  * and scp-style git remotes. It cannot catch an internal project or
  * repository name written as prose, which has no shape to match. A
  * green run here is not a statement about that class.
+ *
+ * Usage: lint-private-refs.mjs [--staged] [<root>]
+ *
+ * By default it reads each tracked file from the working tree. With
+ * --staged it reads the index instead, which is what a commit is made from:
+ * the pre-commit hook uses it, because a private URL that is staged and then
+ * edited out of the working tree alone would otherwise be committed unseen.
  */
 
 import { execFileSync } from 'node:child_process'
@@ -38,6 +45,10 @@ const PRIVATE_HOST = [
   /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
   /^192\.168\.\d{1,3}\.\d{1,3}$/,
   /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/,
+  // Link-local, and the shared address space carrier-grade NAT and overlay
+  // networks such as Tailscale hand out.
+  /^169\.254\.\d{1,3}\.\d{1,3}$/,
+  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}$/,
   /^f[cd][0-9a-f]{2}:/i,
   /^fe[89ab][0-9a-f]:/i,
 ]
@@ -132,17 +143,66 @@ export function trackedFiles(root = ROOT) {
  */
 const SELF = ['scripts/lint-private-refs.mjs', 'test/private-refs.test.js']
 
-export function lintPrivateRefs(root = ROOT) {
-  const problems = []
-  for (const file of trackedFiles(root)) {
-    if (SELF.includes(file)) {
-      continue
+/**
+ * Each staged file's content from the index, as `[path, text]` pairs.
+ *
+ * One `git cat-file --batch` over the blob ids `ls-files --stage` gives,
+ * rather than a `git show` per file. Ids rather than paths keep a path with
+ * a newline in it from breaking the batch protocol. A submodule entry, which
+ * has no blob here, is skipped.
+ */
+export function stagedFiles(root = ROOT) {
+  const entries = execFileSync(
+    'git',
+    ['-C', root, 'ls-files', '--stage', '-z'],
+    {
+      encoding: 'utf8',
     }
-    const absolute = path.join(root, file)
-    let text
+  )
+    .split('\0')
+    .filter(Boolean)
+    .map((entry) => {
+      const [meta, file] = entry.split('\t')
+      const [mode, id] = meta.split(' ')
+      return { mode, id, file }
+    })
+    .filter(({ mode }) => mode !== '160000')
+  if (entries.length === 0) return []
+
+  const output = execFileSync('git', ['-C', root, 'cat-file', '--batch'], {
+    input: entries.map(({ id }) => id).join('\n') + '\n',
+    maxBuffer: 1024 * 1024 * 1024,
+  })
+  const files = []
+  let offset = 0
+  for (const { file } of entries) {
+    const newline = output.indexOf(0x0a, offset)
+    const header = output.toString('utf8', offset, newline).split(' ')
+    const size = Number(header[2])
+    const start = newline + 1
+    files.push([file, output.toString('utf8', start, start + size)])
+    offset = start + size + 1
+  }
+  return files
+}
+
+/** Each tracked file's content from the working tree, as `[path, text]`. */
+function workingFiles(root) {
+  const files = []
+  for (const file of trackedFiles(root)) {
     try {
-      text = fs.readFileSync(absolute, 'utf8')
+      files.push([file, fs.readFileSync(path.join(root, file), 'utf8')])
     } catch {
+      // Deleted from the working tree but still tracked: nothing to read.
+    }
+  }
+  return files
+}
+
+export function lintPrivateRefs(root = ROOT, { staged = false } = {}) {
+  const problems = []
+  for (const [file, text] of staged ? stagedFiles(root) : workingFiles(root)) {
+    if (SELF.includes(file)) {
       continue
     }
     if (text.includes('\0')) {
@@ -155,13 +215,13 @@ export function lintPrivateRefs(root = ROOT) {
   return problems
 }
 
-export function main(root = ROOT) {
-  const problems = lintPrivateRefs(root)
+export function main(root = ROOT, { staged = false } = {}) {
+  const problems = lintPrivateRefs(root, { staged })
   if (problems.length > 0) {
     console.error(
       [
         '',
-        'These tracked files reference a host that only resolves on a private network:',
+        `These ${staged ? 'staged' : 'tracked'} files reference a host that only resolves on a private network:`,
         '',
         ...problems.map((problem) => `  ${problem}`),
         '',
@@ -172,11 +232,16 @@ export function main(root = ROOT) {
     )
     process.exit(1)
   }
-  console.log('No private hosts referenced by tracked files.')
+  console.log(
+    `No private hosts referenced by ${staged ? 'staged' : 'tracked'} files.`
+  )
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   // An explicit root keeps the tests honest: they run the real command
   // against a throwaway repository rather than this one.
-  main(process.argv[2] ? path.resolve(process.argv[2]) : ROOT)
+  const args = process.argv.slice(2)
+  const staged = args.includes('--staged')
+  const root = args.find((arg) => arg !== '--staged')
+  main(root ? path.resolve(root) : ROOT, { staged })
 }

@@ -42,8 +42,8 @@ const commit = (files) => {
   execFileSync('git', ['-C', repo, 'add', '-A'], { env: env() })
 }
 
-const run = () => {
-  const result = spawnSync(process.execPath, [LINTER, repo], {
+const run = (...flags) => {
+  const result = spawnSync(process.execPath, [LINTER, ...flags, repo], {
     encoding: 'utf8',
     env: env(),
   })
@@ -69,14 +69,19 @@ describe('the throwaway repositories', () => {
     // Jest gives this file its own process.env, but a child process inherits
     // the worker's, so a hook's GIT_DIR reaches git unless every call passes
     // its environment explicitly.
-    const saved = process.env.GIT_INDEX_FILE
-    process.env.GIT_INDEX_FILE = '/repository/being/committed/index'
+    const names = ['GIT_DIR', 'GIT_INDEX_FILE', 'GIT_WORK_TREE']
+    const saved = Object.fromEntries(names.map((n) => [n, process.env[n]]))
+    names.forEach((n) => {
+      process.env[n] = `/repository/being/committed/${n}`
+    })
     try {
-      expect(env()).not.toHaveProperty('GIT_INDEX_FILE')
+      names.forEach((n) => expect(env()).not.toHaveProperty(n))
       expect(env().PATH).toBe(process.env.PATH)
     } finally {
-      if (saved === undefined) delete process.env.GIT_INDEX_FILE
-      else process.env.GIT_INDEX_FILE = saved
+      names.forEach((n) => {
+        if (saved[n] === undefined) delete process.env[n]
+        else process.env[n] = saved[n]
+      })
     }
   })
 })
@@ -188,10 +193,64 @@ describe('lint:private', () => {
     expect(output).toContain('fe80::')
   })
 
+  test('fails on link-local and shared address space', () => {
+    commit({
+      'a.md': 'http://169.254.169.254/latest/meta-data',
+      'b.md': 'http://100.64.0.1/b',
+      'c.md': 'http://100.127.255.254/c',
+    })
+
+    const { status, output } = run()
+
+    expect(status).toBe(1)
+    expect(output).toContain('169.254.169.254')
+    expect(output).toContain('100.64.0.1')
+    expect(output).toContain('100.127.255.254')
+  })
+
+  test('passes the public addresses either side of the shared space', () => {
+    commit({
+      'a.md': 'http://100.63.255.255/a',
+      'b.md': 'http://100.128.0.1/b',
+      'c.md': 'http://169.255.0.1/c',
+    })
+
+    expect(run().status).toBe(0)
+  })
+
   test('ignores an untracked file, which is not published', () => {
     fs.writeFileSync(path.join(repo, 'scratch.md'), 'http://example.local/x')
 
     expect(run().status).toBe(0)
+  })
+
+  test('with --staged, reads the index rather than the working tree', () => {
+    // Staged, then edited out of the working tree only: the commit still
+    // carries the private URL, and only the index shows it.
+    commit({ 'docs/setup.md': 'see http://example.local/path\n' })
+    fs.writeFileSync(path.join(repo, 'docs/setup.md'), 'see the docs\n')
+
+    expect(run().status).toBe(0)
+    const { status, output } = run('--staged')
+    expect(status).toBe(1)
+    expect(output).toContain('docs/setup.md:1: example.local')
+  })
+
+  test('with --staged, passes a private URL that is not staged', () => {
+    commit({ 'docs/setup.md': 'see the docs\n', 'logo.bin': 'a\0b' })
+    fs.writeFileSync(
+      path.join(repo, 'docs/setup.md'),
+      'see http://example.local/path\n'
+    )
+
+    expect(run().status).toBe(1)
+    const { status, output } = run('--staged')
+    expect(status).toBe(0)
+    expect(output).toContain('No private hosts referenced by staged files')
+  })
+
+  test('with --staged, passes an empty index', () => {
+    expect(run('--staged').status).toBe(0)
   })
 
   test('says nothing about a bare project name, which it cannot see', () => {

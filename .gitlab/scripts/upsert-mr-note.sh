@@ -26,13 +26,23 @@ if [ ! -f "$body_file" ]; then
   exit 1
 fi
 
+# The marker is how the next run finds this note. A body without it would be
+# posted as a note nothing can find again, and every later run would add
+# another, so it goes on the first line when the body lacks it.
+if ! grep -qF -- "$marker" "$body_file"; then
+  marked="$(mktemp)"
+  trap 'rm -f "$marked"' EXIT
+  { printf '%s\n' "$marker"; cat "$body_file"; } > "$marked"
+  body_file="$marked"
+fi
+
 url="$(notes_url)"
-existing_id="$(api_curl "${url}?per_page=100" | note_id_for "$marker")"
+existing_id="$(find_note_id "$marker")"
 
 if [ -n "$existing_id" ]; then
-  api_curl --request PUT --form "body=<${body_file}" "${url}/${existing_id}" > /dev/null
+  api_write --request PUT --form "body=<${body_file}" "${url}/${existing_id}" > /dev/null
   echo "Updated merge-request note ${existing_id}"
 else
-  api_curl --request POST --form "body=<${body_file}" "${url}" > /dev/null
+  api_write --request POST --form "body=<${body_file}" "${url}" > /dev/null
   echo "Created merge-request note"
 fi

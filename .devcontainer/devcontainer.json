@@ -2,7 +2,17 @@
   "name": "druxt-ui-mami",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "features": {
-    "ghcr.io/jdx/mise/mise:1": {}
+    // Installed through gh-release: jdx/mise publishes no dev container
+    // feature that can be pulled anonymously, and the devcontainers-extra
+    // mise feature asks for the "latest" jdx/mise release with no tag filter,
+    // which can resolve to one of its plugin releases with no mise asset.
+    // The regex keeps this on mise's own v-tags.
+    "ghcr.io/devcontainers-extra/features/gh-release:1": {
+      "repo": "jdx/mise",
+      "binaryNames": "mise",
+      "assetRegex": ".tar.gz$",
+      "releaseTagRegex": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+    }
   },
   "postCreateCommand": "mise trust && mise install && corepack enable && corepack prepare --activate && npm ci",
   "customizations": {

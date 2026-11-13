@@ -81,7 +81,9 @@ export const marker = (name) => `<i data-slot="${name}">${name} content</i>`
 const THEME = fs.readFileSync(path.join(ROOT, 'dist/umami.css'), 'utf8')
 
 export const themeStyles = (className) =>
-  new RegExp(`\\.${className.replace(/[-_]/g, '\\$&')}(?![\\w-])`).test(THEME)
+  new RegExp(
+    `\\.${className.replace(/[\\^$.*+?()[\]{}|/-]/g, '\\$&')}(?![\\w-])`
+  ).test(THEME)
 
 /**
  * Asserts that `wrapper`'s element (or the element `selector` finds) carries

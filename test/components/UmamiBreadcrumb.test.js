@@ -1,5 +1,5 @@
 import UmamiBreadcrumb from '../../components/UmamiBreadcrumb.vue'
-import { expectAccessible, mount } from '../helpers'
+import { expectAccessible, expectThemed, mount } from '../helpers'
 
 const items = [
   { text: 'Home', to: '/' },
@@ -11,7 +11,7 @@ describe('UmamiBreadcrumb', () => {
   test('renders an empty trail by default', () => {
     const wrapper = mount(UmamiBreadcrumb)
     expect(wrapper.element.tagName).toBe('OL')
-    expect(wrapper.classes()).toContain('breadcrumb')
+    expectThemed(wrapper, ['breadcrumb'])
     expect(wrapper.findAll('li')).toHaveLength(0)
   })
 

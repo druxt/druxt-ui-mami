@@ -13,9 +13,10 @@
 # Description: MERGE_REQUEST_DESCRIPTION, then CI_MERGE_REQUEST_DESCRIPTION.
 # When GITLAB_API_TOKEN, CI_API_V4_URL, CI_PROJECT_ID and CI_MERGE_REQUEST_IID
 # are all set the description is fetched instead, because the variable is cut
-# at 2700 characters and a footer sits at the end. On a merge request pipeline
-# with no description from either source the check refuses: passing over a
-# description it never read is not a pass.
+# at 2700 characters and a footer sits at the end. A CI_MERGE_REQUEST_DESCRIPTION
+# that reaches the cut is refused rather than read, since its end is missing.
+# On a merge request pipeline with no description from either source the check
+# refuses too: passing over a description it never read is not a pass.
 #
 # Files: every tracked text file, whatever the range.
 #
@@ -31,7 +32,7 @@ base=""
 for arg in "$@"; do
   case "$arg" in
     --files-only) files_only=1 ;;
-    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,23p' "$0"; exit 0 ;;
     *) base="$arg" ;;
   esac
 done
@@ -128,7 +129,9 @@ if [ "$files_only" -eq 0 ]; then
       description="$CI_MERGE_REQUEST_DESCRIPTION"
       have_description=1
       if [ "${#description}" -ge 2700 ]; then
-        echo "[WARN] CI_MERGE_REQUEST_DESCRIPTION is cut at 2700 characters; set GITLAB_API_TOKEN so the full description is read." >&2
+        echo "[ERROR] CI_MERGE_REQUEST_DESCRIPTION is ${#description} characters, so GitLab has cut it at 2700 and its end is unread." >&2
+        echo "        Set GITLAB_API_TOKEN so the full description is fetched." >&2
+        exit 2
       fi
     elif [ -n "${CI_MERGE_REQUEST_IID:-}" ]; then
       echo "[ERROR] merge request pipeline, but the description is not available." >&2

@@ -170,8 +170,12 @@ lint:commit:
     GIT_DEPTH: 0
   script:
     - section_start "commitlint" "Validating commit messages"
-    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-    - npm run lint:commit -- --from "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --to HEAD --verbose
+    # From the merge request's diff base, the commit GitLab compares it
+    # against, so the range is the merge request's own commits whatever the
+    # target branch has done since. The base is fetched by sha when the clone
+    # does not already hold it.
+    - git cat-file -e "${CI_MERGE_REQUEST_DIFF_BASE_SHA}^{commit}" 2>/dev/null || git fetch origin "$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+    - npm run lint:commit -- --from "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --to HEAD --verbose
     - section_end "commitlint"
 
 # The work is the author's. No commit, merge request description or tracked
