@@ -1,6 +1,14 @@
 <template>
   <article class="article-lead">
-    <nuxt-link class="article-lead__media" :to="to">
+    <!-- The title links the article and names it. This second link holds
+         only a decorative image, so it stays out of the tab order and the
+         accessibility tree rather than reading as a link with no name. -->
+    <nuxt-link
+      aria-hidden="true"
+      class="article-lead__media"
+      tabindex="-1"
+      :to="to"
+    >
       <img v-if="img" :src="img" alt="" />
     </nuxt-link>
     <div class="article-lead__body">
