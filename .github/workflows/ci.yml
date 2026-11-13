@@ -12,7 +12,11 @@ on:
   # No branch filter: a pull request into any base runs CI. A stacked pull
   # request targets the branch below it rather than 0.x, and a filter here
   # would leave it untested but green.
+  #
+  # `edited` as well, because the prose lint reads the pull request's
+  # description: an edited description is linted again without a push.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read

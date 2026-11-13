@@ -50,9 +50,11 @@ $mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 // Bootstrap 4 breakpoints, which is what bootstrap-vue emits against.
 // Both header bars stick. The masthead offsets by exactly the demo bar's
 // height so the two stack rather than share a strip; both read this.
-// druxt-ui-mami: the demo bar is not part of this package, so nothing sits
-// above the sticky masthead. The Umami demo sets 40px, its bar's height.
-$demo-bar-height: 0px;
+// This package draws no demo bar, so by default nothing sits above the
+// sticky masthead. A site that sticks a bar of its own there sets
+// --umami-top-offset to its height, and the masthead, the scroll padding and
+// the sticky ingredients all clear it.
+$demo-bar-height: var(--umami-top-offset, 0px);
 
 $bp-sm: 575.98px;
 $bp-md: 767.98px;
@@ -4800,11 +4802,11 @@ html.druxt-inspector {
 }
 
 // The band whose page draws its own head: room for the tab bar, no more.
-// The Umami demo spaces its View and Edit tabs from the masthead here. This
-// package renders no tabs, so a page that draws its own head meets the
-// masthead directly.
+// This package renders no tabs, so by default a page that draws its own head
+// meets the masthead directly. A site with something between them, such as
+// view and edit tabs, sets --umami-flush-band-padding to make room.
 .band.band--flush {
-  padding-top: 0;
+  padding-top: var(--umami-flush-band-padding, 0);
 }
 
 // ── JSON:API drawer ──────────────────────────────────────────────────────────

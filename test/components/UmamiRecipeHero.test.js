@@ -15,6 +15,27 @@ describe('UmamiRecipeHero', () => {
     expect(wrapper.find('h1').text()).toBe('Borscht <b>with</b> pork ribs')
   })
 
+  test('renders the #title slot in place of the title text', () => {
+    const wrapper = mount(UmamiRecipeHero, {
+      propsData: { title: 'Borscht' },
+      slots: { title: marker('title') },
+    })
+    const heading = wrapper.find('h1.node-head__title')
+    expect(heading.find('[data-slot=title]').exists()).toBe(true)
+    expect(heading.text()).toBe('title content')
+  })
+
+  test('adds mediaClass to the photograph box, beside its own classes', () => {
+    const wrapper = mount(UmamiRecipeHero, {
+      propsData: { mediaClass: { 'is-swapped': true, 'is-not': false } },
+    })
+    const media = wrapper.find('.node-hero')
+    expect(media.classes()).toEqual(
+      expect.arrayContaining(['node-hero', 'node-hero--recipe', 'is-swapped'])
+    )
+    expect(media.classes()).not.toContain('is-not')
+  })
+
   test('renders the photograph, the breadcrumb above the title, and the summary', () => {
     const wrapper = mount(UmamiRecipeHero, {
       propsData: { title: 'Borscht' },
