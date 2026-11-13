@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 
 import DruxtUiMamiModule from '../module.js'
@@ -159,5 +160,22 @@ describe('DruxtUiMamiModule', () => {
   test('carries the package metadata Nuxt reports a module by', () => {
     expect(DruxtUiMamiModule.meta).toBe(pkg)
     expect(DruxtUiMamiModule.meta.name).toBe('druxt-ui-mami')
+  })
+})
+
+describe('package.json', () => {
+  // A site installs the package with whatever Node its Nuxt 2 runs on, and a
+  // strict install refuses a package whose engines are narrower. The module
+  // and components run wherever Nuxt does, so engines states Nuxt's range.
+  // `nuxt` declares none of its own; its @nuxt/core does, found from nuxt.
+  test('declares the Node range Nuxt 2 runs on', () => {
+    const nuxtDir = path.dirname(require.resolve('nuxt/package.json'))
+    const core = JSON.parse(
+      fs.readFileSync(
+        path.join(nuxtDir, '..', '@nuxt', 'core', 'package.json'),
+        'utf8'
+      )
+    )
+    expect(pkg.engines.node).toBe(core.engines.node)
   })
 })
