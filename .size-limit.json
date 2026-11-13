@@ -1,0 +1,15 @@
+[
+  {
+    "name": "The compiled theme, dist/umami.css",
+    "path": "dist/umami.css",
+    "limit": "16 kB"
+  },
+  {
+    "name": "Every stylesheet the module adds by default, Bootstrap 4 included",
+    "path": [
+      "node_modules/bootstrap/dist/css/bootstrap.min.css",
+      "dist/umami.css"
+    ],
+    "limit": "36 kB"
+  }
+]

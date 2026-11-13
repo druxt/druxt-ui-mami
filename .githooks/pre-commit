@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# The fast half of CI: every linter, then the unit tests.
+#
+# The hook runs with GIT_DIR and GIT_INDEX_FILE set to this repository. A test
+# that runs git in a child process must not inherit them, or its throwaway
+# repository's `init` and `add` land here instead: test/private-refs.test.js
+# strips them, and any new test that shells out to git has to do the same.
+set -e
+npm run --silent lint
+# lint:private reads the working tree. The commit is made from the index, so
+# the staged content is checked too: a private URL that is staged and then
+# removed from the working tree alone would pass the check above.
+node scripts/lint-private-refs.mjs --staged
+npm test --silent

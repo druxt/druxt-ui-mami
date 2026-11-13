@@ -1,6 +1,7 @@
 <template>
   <b-sidebar
     :id="id"
+    :aria-label="label"
     backdrop
     left
     no-close-on-route-change
@@ -77,6 +78,9 @@ export default {
     tagline: { type: String, default: 'Food magazine' },
     /** Where the brand links. */
     to: { type: [String, Object], default: '/' },
+
+    /** The drawer's accessible name, read when it opens. */
+    label: { type: String, default: 'Menu' },
 
     closeLabel: { type: String, default: 'Close menu' },
 

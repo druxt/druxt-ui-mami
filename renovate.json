@@ -1,0 +1,63 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "baseBranches": ["0.x"],
+  "automerge": false,
+  "rangeStrategy": "bump",
+  "dependencyDashboard": true,
+  "branchPrefix": "deps/",
+  "labels": ["dependencies"],
+  "enabledManagers": ["github-actions", "npm"],
+  "packageRules": [
+    {
+      "description": "Pin GitHub Actions to immutable commit SHAs. A floating tag is a mutable reference to code that runs with repository credentials. Scoped to github-actions: npm packages already carry integrity hashes in the lockfile.",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "Freeze the stack this branch is for: 0.x is the Vue 2 package for Nuxt 2 sites on Bootstrap 4 and BootstrapVue 2. These move only as a coordinated upgrade, which on this branch there will not be; the next majors are the Druxt 2.x package, not an update to this one.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "nuxt",
+        "vue",
+        "vue-template-compiler",
+        "bootstrap",
+        "bootstrap-vue"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "The Vue 2 test toolchain: @vue/test-utils 1 and @vue/vue2-jest are the last lines for Vue 2, and @vue/vue2-jest needs Jest 29 and Babel 7. Majors are held by the majors rule below; this keeps the reason next to the names.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "@vue/test-utils",
+        "@vue/vue2-jest",
+        "jest",
+        "babel-jest",
+        "jest-environment-jsdom",
+        "@babel/core",
+        "@babel/preset-env",
+        "eslint-plugin-vue"
+      ],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Node is pinned in .mise.toml, .nvmrc and the pipeline images, and moves as one deliberate change, not as a routine update.",
+      "matchPackageNames": ["node"],
+      "enabled": false
+    },
+    {
+      "description": "Majors need a human. An automated major lands a breaking change on a branch nobody chose to upgrade.",
+      "matchManagers": ["npm", "github-actions"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "One pull request for everything else. Ungrouped updates produce a pull request per dependency and the whole set gets ignored together.",
+      "matchPackageNames": ["*"],
+      "groupName": "all dependencies",
+      "groupSlug": "all"
+    }
+  ]
+}

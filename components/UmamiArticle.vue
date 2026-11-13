@@ -21,7 +21,8 @@
         <h1 class="article-page__title" v-text="title" />
 
         <p class="article-page__byline">
-          {{ byline }}<span class="article-page__date"> · {{ date }}</span>
+          {{ byline
+          }}<span v-if="date" class="article-page__date"> · {{ date }}</span>
         </p>
 
         <div class="field--body article-page__body">

@@ -1,0 +1,18 @@
+# Links in the tracked markdown, checked by the lint:links job. Report only:
+# link checkers hit rate limits on real runs, and a transient failure should
+# not block a merge request.
+#
+# Code blocks are not checked: the README's install line holds a placeholder
+# commit, not a link.
+no_progress = true
+max_concurrency = 4
+accept = [200, 206, 429]
+timeout = 20
+max_retries = 2
+exclude_all_private = true
+exclude = [
+  # The local development addresses.
+  "^https?://(localhost|127\\.0\\.0\\.1)",
+  # Hosts that turn away automated requests.
+  "npmjs\\.com",
+]

@@ -17,13 +17,9 @@
             >
               {{ link.text }}
             </b-link>
-            <b-link
-              v-if="more"
-              class="collections__more"
-              nuxt
-              :to="more.to"
-              >{{ more.text }}</b-link
-            >
+            <b-link v-if="more" class="collections__more" nuxt :to="more.to">{{
+              more.text
+            }}</b-link>
           </div>
         </b-col>
       </b-row>

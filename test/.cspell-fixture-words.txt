@@ -1,0 +1,37 @@
+# The tests pass Spanish strings, as a multilingual site does. These words
+# are allowed in test/ only.
+Abrir
+aquí
+catalana
+Cerrar
+Cuéntanos
+Cómo
+Destacado
+Diapositiva
+diapositiva
+Diapositivas
+Dificultad
+Español
+Esta
+esta
+Filtrar
+funciona
+Idioma
+ingrediente
+Ingredientes
+inicio
+Menú
+menú
+mostrar
+ninguna
+Ordenar
+piensas
+Preparación
+pudo
+página
+recetas
+Revista
+semana
+Siguiente
+Todas
+Volver

@@ -30,7 +30,9 @@ module.exports = function DruxtUiMamiModule(moduleOptions = {}) {
 
   // Styles: Bootstrap 4 first, then the theme that re-skins it.
   if (options.bootstrapCSS) {
-    this.options.css.push(require.resolve('bootstrap/dist/css/bootstrap.min.css'))
+    this.options.css.push(
+      require.resolve('bootstrap/dist/css/bootstrap.min.css')
+    )
   }
   this.options.css.push(r('dist/umami.css'))
 
@@ -39,7 +41,11 @@ module.exports = function DruxtUiMamiModule(moduleOptions = {}) {
     head.link = head.link || []
     head.link.push(
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: true },
+      {
+        rel: 'preconnect',
+        href: 'https://fonts.gstatic.com',
+        crossorigin: true,
+      },
       { hid: 'umami-fonts', rel: 'stylesheet', href: FONTS }
     )
   }

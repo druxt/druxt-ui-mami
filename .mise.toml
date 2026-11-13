@@ -1,0 +1,51 @@
+# Pinned toolchain. `mise install` gives every contributor and every CI job the
+# same Node, so "works on my machine" is a statement about a version anyone can
+# reproduce.
+#
+# Node 22 is the oldest maintained line, and the lowest the lint and test
+# tooling here runs on. A site that consumes the package needs only what
+# Nuxt 2.18 needs; `engines` in package.json says what that is.
+#
+# The tasks below are the commands CI runs, so a maintainer can run exactly
+# what the pipeline runs.
+
+[tools]
+node = "22.23.5"
+
+[tasks.install]
+description = "Install dependencies with the manager package.json declares"
+run = "corepack enable && corepack prepare --activate && npm ci"
+
+[tasks.build]
+description = "Compile the theme to dist/umami.css"
+run = "npm run build"
+
+[tasks.lint]
+description = "Run every linter except prose"
+run = "npm run lint"
+
+[tasks."lint:audit"]
+description = "Audit shipped dependencies"
+run = "npm run lint:audit"
+
+[tasks."lint:prose"]
+description = "Lint prose with Vale, installing it first"
+run = "npm run lint:prose:install && npm run lint:prose"
+
+[tasks.test]
+description = "Run the unit tests, with the coverage floor enforced"
+run = "npm test"
+
+[tasks.size]
+description = "Check the compiled theme against its size budget"
+run = "npm run size"
+
+[tasks.ci]
+description = "Everything the pipelines run locally, except prose and links"
+depends = ["lint", "lint:audit", "test", "size"]
+
+# Git hooks. Run once per clone. `npm install` does this for you through
+# scripts/prepare.mjs; this task is for a clone that skipped install scripts.
+[tasks."hooks:install"]
+description = "Point git at the committed .githooks/ directory"
+run = "git config core.hooksPath .githooks"

@@ -1,1 +1,17 @@
 node_modules/
+
+# Test, coverage and lint output
+coverage/
+reports/
+*.tgz
+pack-check/
+
+# Vale binary and styles, installed by .gitlab/scripts/install-vale.sh
+.vale/
+
+# Link checker cache
+.lycheecache
+
+# Logs and editor droppings
+*.log
+.DS_Store
