@@ -1,11 +1,12 @@
 # druxt-ui-mami
 
 The look of the [Umami demo](https://umami.demo.druxtjs.org) for a Nuxt 2
-site: its theme, on Bootstrap 4, and the presentational Vue components that
-draw it. The components take props and slots only. They know nothing of
-Drupal or Druxt: a site maps its own content onto them.
+site, in two parts. One is its theme on Bootstrap 4, the other the
+presentational Vue components that draw it. The components take props and
+slots only, and don't read Drupal or Druxt data: a site maps its own content
+onto them.
 
-It's a demo's UI, not a general-purpose kit, hence the name. This `0.x` branch
+The name says what it is: one demo's UI. This `0.x` branch
 is the Vue 2 package for Druxt 0.x and 1.x sites, and follows their unscoped
 `druxt-*` naming. The Druxt 2.x version will be `@druxt/ui-mami`.
 
@@ -18,8 +19,8 @@ commit on `0.x`:
 npm install https://codeload.github.com/druxt/druxt-ui-mami/tar.gz/<commit>
 ```
 
-The compiled theme, `dist/umami.css`, is committed, so the tarball needs no
-build step, no git and no Sass. That is what lets it install in StackBlitz,
+The compiled theme, `dist/umami.css`, is committed, so the tarball installs
+without a build step, git or Sass. That is what lets it install in StackBlitz,
 which has no git. `npm run build` recompiles it from `src/scss/theme.scss`,
 and a change to the theme commits the rebuilt file with it.
 
@@ -78,7 +79,7 @@ multilingual site passes its own.
 
 ## Components
 
-Props are listed by name; a slot is named `#slot`, and `#default` is the
+Props are listed by name. A slot is written `#slot`, and `#default` is the
 default slot. A link target (`to`) is a route string or object.
 
 ### Chrome
@@ -109,12 +110,12 @@ default slot. A link target (`to`) is a route string or object.
 - `UmamiArticleLead`: the lead story at full width. Props `to`, `img`, `kicker`, `title`, `summary`, `ctaText`.
 - `UmamiGrid`: a grid of cards. Prop `variant` (`cards`, `articles` or `aside`). `#default`.
 - `UmamiCard`: a card, all one link: image, kicker, title and a meta line. Props `to`, `kicker`, `title`, `meta`. Slot `#media`.
-- `UmamiRecipeListing`: recipe cards under a text filter, difficulty buttons, a sort and a count; it filters nothing itself. Props `items`, `query`, `difficulty`, `sort` (all three `.sync`), `filterPlaceholder`, `difficulties` (`{ value, text }` each), `difficultyLabel`, `sortOptions`, `sortLabel`, `sortLabelId`, `countText`, `emptyText`. Slots `#card` (gets `item`), `#note`.
+- `UmamiRecipeListing`: recipe cards under the filters, with a sort and a count. The site does the filtering, from the three `.sync` props. Props `items`, `query`, `difficulty`, `sort` (all three `.sync`), `filterPlaceholder`, `difficulties` (`{ value, text }` each), `difficultyLabel`, `sortOptions`, `sortLabel`, `sortLabelId`, `countText`, `emptyText`. Slots `#card` (gets `item`), `#note`.
 
 ### Pages
 
 - `UmamiRecipePage`: a recipe, whole. `#default`.
-- `UmamiRecipeHero`: the photograph full width, with the breadcrumb, title and summary on it. Prop `title`. Slots `#media`, `#breadcrumb`, `#summary`.
+- `UmamiRecipeHero`: the photograph at full width, with the title over it between the breadcrumb and the summary. Prop `title`. Slots `#media`, `#breadcrumb`, `#summary`.
 - `UmamiStatGrid`: a row of figures, each a label over its value. Prop `stats` (`{ label, value }` each).
 - `UmamiRecipeBody`: ingredients beside the method, with tags under it. Props `ingredientsHeading`, `methodHeading`. Slots `#ingredients`, `#method`, `#tags`.
 - `UmamiIngredients`: a list of ingredients. Prop `items` (text).
@@ -124,7 +125,7 @@ default slot. A link target (`to`) is a route string or object.
 - `UmamiArticle`: an article: photograph, kicker, title, byline, date, body, tags and what follows. Props `title`, `kicker`, `byline`, `date`, `rail` (the left margin's lines, from lg). Slots `#media`, `#body`, `#tags`, `#more`, `#note`.
 - `UmamiHeading`: a section's heading inside a page. Prop `text`.
 - `UmamiPageHead`: a page's head band. Props `title`, `kicker`, `description` (HTML), `count`. Slot `#breadcrumb`.
-- `UmamiPage`: a basic page: head band, body at a reading measure, then anything after. Prop `title`. Slots `#breadcrumb`, `#default`, `#after`.
+- `UmamiPage`: a basic page. The head band comes first, then the body at a reading measure, then anything after it. Prop `title`. Slots `#breadcrumb`, `#default`, `#after`.
 - `UmamiCollection`: a collection's page: head band, then its cards. Props `title`, `kicker`, `description` (HTML), `count`, `empty`, `emptyText`. Slots `#breadcrumb`, `#default`, `#note`.
 - `UmamiAbout`: a mark beside a kicker and title, then paragraphs. Props `kicker`, `title`, `paragraphs`. Slot `#mark`.
 - `UmamiNote`: an aside on how the page is made, with a link and a code sample. Props `kicker`, `title`, `file`, `code` (HTML), `cta`, `to`, `href`. `#default`.
@@ -153,6 +154,29 @@ options the module sets.
 npm install
 npm run build
 ```
+
+## Development
+
+```sh
+npm install   # dependencies, the theme build and the git hooks
+npm test      # unit and accessibility tests for the module and every component
+npm run lint  # ESLint, Prettier, markdownlint, cspell, knip and the content checks
+```
+
+[CONTRIBUTING.md](CONTRIBUTING.md) has the conventions, and the pipeline runs
+the same checks on every merge request.
+
+## Releases
+
+The package is not on npm yet, and there is no publish job. Releases will be
+cut from [changesets](https://github.com/changesets/changesets): the person
+who makes a change records its bump and its changelog line with
+`npm run changeset`, and the release turns those into the version and the
+[changelog](CHANGELOG.md).
+
+The tooling is in place before the first release so that it is not
+retrofitted after one. The first release is 0.1.0 as it stands, so nothing
+before it needs a changeset, and the publish job comes with that release.
 
 ## License
 
