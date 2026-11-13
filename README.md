@@ -115,7 +115,7 @@ default slot. A link target (`to`) is a route string or object.
 ### Pages
 
 - `UmamiRecipePage`: a recipe, whole. `#default`.
-- `UmamiRecipeHero`: the photograph at full width, with the title over it between the breadcrumb and the summary. Prop `title`. Slots `#media`, `#breadcrumb`, `#summary`.
+- `UmamiRecipeHero`: the photograph at full width, with the title over it between the breadcrumb and the summary. Props `title` and `mediaClass`, classes for the photograph's box. Slots `#media`, `#breadcrumb`, `#title`, which replaces the `title` text, and `#summary`.
 - `UmamiStatGrid`: a row of figures, each a label over its value. Prop `stats` (`{ label, value }` each).
 - `UmamiRecipeBody`: ingredients beside the method, with tags under it. Props `ingredientsHeading`, `methodHeading`. Slots `#ingredients`, `#method`, `#tags`.
 - `UmamiIngredients`: a list of ingredients. Prop `items` (text).
@@ -147,6 +147,22 @@ Under `druxtUiMami` in `nuxt.config.js`, or as module options:
 
 A `bootstrapVue` key in `nuxt.config.js` is merged into the BootstrapVue
 options the module sets.
+
+## Custom properties
+
+Two CSS custom properties make room for chrome a site adds around the theme:
+
+| Property                     | Default | Set it to                                                                                         |
+| ---------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `--umami-top-offset`         | `0px`   | The height of a bar the site sticks above the masthead. The masthead and scroll padding clear it. |
+| `--umami-flush-band-padding` | `0`     | Room above a page that draws its own head, for tabs or a toolbar between it and the masthead.     |
+
+```css
+:root {
+  --umami-top-offset: 40px;
+  --umami-flush-band-padding: 1.5rem;
+}
+```
 
 ## Build
 
