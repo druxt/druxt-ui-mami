@@ -32,8 +32,8 @@ jobs:
 
       # JavaScript needs no build: CodeQL reads the source, Vue files
       # included.
-      - uses: github/codeql-action/init@4187e74d05793876e9989daffde9c3e66b4acd07  # v3
+      - uses: github/codeql-action/init@9418214df1f2c4b8128c770156c409013b07d6b9  # v3
         with:
           languages: javascript
 
-      - uses: github/codeql-action/analyze@4187e74d05793876e9989daffde9c3e66b4acd07  # v3
+      - uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9  # v3
