@@ -162,7 +162,10 @@ export function stagedFiles(root = ROOT) {
     .split('\0')
     .filter(Boolean)
     .map((entry) => {
-      const [meta, file] = entry.split('\t')
+      // A filename can itself hold a tab, so only the first one separates.
+      const tab = entry.indexOf('\t')
+      const meta = entry.slice(0, tab)
+      const file = entry.slice(tab + 1)
       const [mode, id] = meta.split(' ')
       return { mode, id, file }
     })

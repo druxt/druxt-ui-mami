@@ -2,8 +2,10 @@
 const prose = (h, content) =>
   h('div', { staticClass: 'method-prose', domProps: { innerHTML: content } })
 
-// The list tags, opening or closing, with whatever attributes they carry.
-const LIST_TAG = /<(\/?)(ol|ul|li)(?=[\s/>])[^>]*>/gi
+// The list tags, opening or closing, with whatever attributes they carry. A
+// quoted attribute value can hold a `>`, so quotes are read whole rather than
+// letting the first `>` end the tag.
+const LIST_TAG = /<(\/?)(ol|ul|li)(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/gi
 
 /**
  * The first ordered list in `html`: where it starts and ends, and the inner

@@ -93,6 +93,15 @@ describe('UmamiMethodSteps', () => {
     expect(host.find('.method-prose').element.innerHTML).toBe('<p>Serve.</p>')
   })
 
+  test('reads a quoted attribute holding > as part of its tag', () => {
+    const host = mountFunctional(UmamiMethodSteps, {
+      html: `<ol><li title="Rest > 5 minutes">Mix.</li><li data-x='a>b'>Bake.</li></ol>`,
+    })
+    expect(
+      host.findAll('.method-step__text').wrappers.map((s) => s.text())
+    ).toEqual(['Mix.', 'Bake.'])
+  })
+
   test('keeps an unordered list nested in a step inside that step', () => {
     const host = mountFunctional(UmamiMethodSteps, {
       html: '<OL><LI>Mix:<ul><li>flour</li><li>water</li></ul></LI><LI>Bake.</LI></OL>',

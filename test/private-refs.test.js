@@ -249,6 +249,15 @@ describe('lint:private', () => {
     expect(output).toContain('No private hosts referenced by staged files')
   })
 
+  test('with --staged, reads a staged file whose name holds a tab', () => {
+    commit({ 'scripts/lint-private-refs.mjs\t.md': 'http://example.local/x\n' })
+    fs.writeFileSync(path.join(repo, 'scripts/lint-private-refs.mjs\t.md'), '')
+
+    const { status, output } = run('--staged')
+    expect(status).toBe(1)
+    expect(output).toContain('example.local')
+  })
+
   test('with --staged, passes an empty index', () => {
     expect(run('--staged').status).toBe(0)
   })
