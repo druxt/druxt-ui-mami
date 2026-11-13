@@ -87,7 +87,7 @@ default slot. A link target (`to`) is a route string or object.
 - `UmamiMasthead`: the drawer toggle, brand, main menu and language links. Props `drawer` (the drawer's id, `menu`), `menuLabel`, `languageLabel`, `languages`. Slots `#brand`, `#menu`.
 - `UmamiBrand`: the type wordmark and tagline, linked home. Props `name`, `tagline`, `to`.
 - `UmamiLanguageSwitch`: a link to each language's version of the page. Props `languages` (`{ code, to, active, label }` each), `label`, `variant` (`masthead` or `drawer`). Emits `navigate`.
-- `UmamiMobileDrawer`: the phone menu, a drawer from the left that holds the page still while open. Props `id`, `name`, `tagline`, `to`, `closeLabel`, `languages`, `creditLabel`, `creditHref`, `creditText`, `path` (the current path, which resets the saved scroll). Slots `#menu` (gets `hide`), `#credit-icon`.
+- `UmamiMobileDrawer`: the phone menu, a drawer from the left that holds the page still while open. Props `id`, `name`, `tagline`, `to`, `label` (the drawer's accessible name), `closeLabel`, `languages`, `creditLabel`, `creditHref`, `creditText`, `path` (the current path, which resets the saved scroll). Slots `#menu` (gets `hide`), `#credit-icon`.
 - `UmamiBand`: a full-width band of the page. Props `ground` (`paper` or `warm`), `modifiers` (`head`, `flush`, `footer`), `contained`. `#default`.
 - `UmamiSplit`: two columns from md, two thirds and one third. Slots `#main`, `#aside`.
 - `UmamiFooter`: the dark site footer. `#default`.
