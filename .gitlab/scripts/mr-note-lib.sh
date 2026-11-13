@@ -102,14 +102,33 @@ notes_url() {
   printf '%s/projects/%s/merge_requests/%s/notes' "$api" "$project" "$iid"
 }
 
-# curl with retries and the token header, as an array to expand at the call
-# site. The token is passed as a header value, never on a URL, so it does not
-# land in a log line that echoes the request target.
+# curl with the token header, printing the response body. The token is passed
+# as a header value, never on a URL, so it does not land in a log line that
+# echoes the request target.
+#
+# Anything but a 2xx fails, and the body is not printed. curl's own --fail
+# lets a 3xx through, and an error or redirect body read as a result makes a
+# note that was never posted report success, or a page with no note in it.
 api_curl() {
-  # --fail: without it curl exits 0 on 403 or 500 and the caller treats the
-  # error body as a result, so a note that was never posted reports success.
-  curl -sS --fail --connect-timeout 10 --max-time 30 \
-    --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" "$@"
+  local out code
+  out="$(mktemp)"
+  if ! code="$(curl -sS --connect-timeout 10 --max-time 30 \
+    --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
+    --output "$out" --write-out '%{http_code}' "$@")"; then
+    rm -f "$out"
+    return 1
+  fi
+  case "$code" in
+    2??)
+      cat "$out"
+      rm -f "$out"
+      ;;
+    *)
+      rm -f "$out"
+      echo "GitLab API answered HTTP ${code}." >&2
+      return 1
+      ;;
+  esac
 }
 
 # Reading is safe to repeat, so it retries.
@@ -126,14 +145,16 @@ api_write() {
 
 # Echo the id of the note carrying the marker, or nothing.
 #
-# The notes endpoint pages, newest first. Reading only the first page misses
-# the marker on a busy merge request, and the caller then posts a duplicate
-# instead of editing the note that is already there.
+# The notes endpoint pages, newest first. Reading only some of the pages
+# misses the marker on a busy merge request, and the caller then posts a
+# duplicate instead of editing the note that is already there, so it reads
+# until a page comes back empty. A merge request with more than
+# NOTE_PAGE_LIMIT pages fails rather than reporting no match.
 find_note_id() {
-  local marker="$1" url page id body
+  local marker="$1" url page id body limit="${NOTE_PAGE_LIMIT:-1000}"
   url="$(notes_url)"
   page=1
-  while [ "$page" -le 20 ]; do
+  while [ "$page" -le "$limit" ]; do
     body="$(api_read "${url}?per_page=100&page=${page}")" || return 1
     case "$body" in '' | '[]') return 0 ;; esac
     id="$(printf '%s' "$body" | note_id_for "$marker")" || return 1
@@ -143,5 +164,6 @@ find_note_id() {
     fi
     page=$((page + 1))
   done
-  return 0
+  echo "More than ${limit} pages of notes; refusing to guess whether the marker is there." >&2
+  return 1
 }
