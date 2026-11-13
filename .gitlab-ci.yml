@@ -1,0 +1,356 @@
+---
+# CI for druxt-ui-mami, the shape the Druxt repository standard asks of a Nuxt
+# module. See the standard for what each job is for and why it exists.
+#
+# GitHub Actions (.github/workflows/ci.yml) runs the same lint and test set,
+# because the repository is mirrored there and releases will be cut there.
+# Keep the two in step: nothing on the GitHub side lints that workflow, so
+# lint:yaml here runs actionlint over it in return.
+#
+# Secret scanning is gitleaks, not GitLab's Security/Secret-Detection
+# template. That template is an Ultimate-tier feature: on a non-Ultimate
+# instance the include produces no job at all, so the configuration reads as
+# coverage while scanning nothing.
+#
+# The component gallery's visual and accessibility checks are a later stage,
+# not in this file yet. When they come they add `visual` and `preview` stages
+# after `test`, with the merge-request note scripts already in .gitlab/scripts.
+
+stages:
+  - lint
+  - test
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+default:
+  tags: [docker]
+  timeout: 15m
+  before_script:
+    - 'section_start() { local n="$1" t="${2:-$1}"; printf "\e[0Ksection_start:%s:%s\r\e[0K%s\n" "$(date +%s)" "$n" "$t"; }'
+    - 'section_end() { printf "\e[0Ksection_end:%s:%s\r\e[0K\n" "$(date +%s)" "$1"; }'
+
+# Shared Node setup. `corepack prepare --activate` reads the packageManager
+# field rather than naming a manager here. The cache is keyed by the
+# lockfile hash: a dependency bump misses once and hits thereafter. The image
+# matches .mise.toml and .nvmrc; move all three together.
+.node:
+  image: node:22.23.5
+  interruptible: true
+  cache:
+    key:
+      files:
+        - package-lock.json
+      prefix: node-22.23.5
+    paths:
+      - .npm/
+  before_script:
+    - !reference [default, before_script]
+    - section_start "install" "Installing dependencies"
+    - corepack enable
+    - corepack prepare --activate
+    - npm ci --cache .npm --prefer-offline --no-audit --no-fund
+    - section_end "install"
+
+#
+# --- Lint ---
+#
+
+lint:js:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "eslint" "Linting the module, components, tests and scripts"
+    - npm run lint:js
+    - section_end "eslint"
+
+lint:format:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "prettier" "Checking formatting"
+    - npm run lint:format
+    - section_end "prettier"
+
+lint:md:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "markdownlint" "Linting Markdown"
+    - npm run lint:md
+    - section_end "markdownlint"
+
+lint:cspell:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "cspell" "Spell checking"
+    - npm run lint:cspell
+    - section_end "cspell"
+
+# This repository is public, and its README is what people copy to add the
+# theme to a site. A host only the author can reach must never reach a
+# tracked file.
+lint:private:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "private-refs" "Checking for private host references"
+    - npm run lint:private
+    - section_end "private-refs"
+
+lint:knip:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "knip" "Checking for unused and undeclared dependencies"
+    - npm run lint:knip
+    - section_end "knip"
+
+# Production only, and blocking. scripts/audit-shipped.mjs installs the
+# packed tarball the way a site resolves it and audits that tree, because an
+# audit of this checkout counts the Nuxt peer and the test tooling as shipped.
+lint:audit:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "audit" "Auditing what a site installs"
+    - npm run lint:audit
+    - section_end "audit"
+
+# The full tree, development tooling and the Nuxt peer included. Reporting
+# only: most of it sits behind the deliberate Nuxt 2 and Vue 2 freeze and is
+# not fixable on this branch.
+lint:audit:all:
+  extends: .node
+  stage: lint
+  allow_failure: true
+  script:
+    - section_start "audit-all" "Auditing every dependency, for the record"
+    - npm audit --audit-level=high
+    - section_end "audit-all"
+
+# yamllint covers this file; actionlint covers the GitHub workflows, which
+# nothing on the GitHub side lints before a push.
+lint:yaml:
+  stage: lint
+  image: python:3.12-slim
+  interruptible: true
+  variables:
+    ACTIONLINT_VERSION: '1.7.12'
+    ACTIONLINT_SHA256: '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8'
+  script:
+    - section_start "yamllint" "Linting YAML"
+    - pip install --quiet --disable-pip-version-check yamllint==1.38.0
+    - yamllint .gitlab-ci.yml .yamllint .github/
+    - section_end "yamllint"
+    - section_start "actionlint" "Linting GitHub workflows"
+    - apt-get update -qq && apt-get install -y -qq curl > /dev/null
+    - curl -sSLo actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+    - echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum -c -
+    - tar -xzf actionlint.tar.gz actionlint
+    - ./actionlint -color
+    - section_end "actionlint"
+
+# The merge request's own commits, not the whole history. This repository
+# squash-merges, so a prose title becomes the commit subject and breaks the
+# next push to the target branch.
+lint:commit:
+  extends: .node
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    # Full history on both sides, so a merge request longer than a shallow
+    # window still has its earliest commits checked.
+    GIT_DEPTH: 0
+  script:
+    - section_start "commitlint" "Validating commit messages"
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - npm run lint:commit -- --from "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --to HEAD --verbose
+    - section_end "commitlint"
+
+# The work is the author's. No commit, merge request description or tracked
+# file may credit an AI tool as author, co-author or generator. Full history,
+# because the range is the merge request's own and its base has to be present.
+lint:attribution:
+  image: node:22.23.5
+  stage: lint
+  interruptible: true
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - section_start "attribution" "Checking for AI attribution"
+    - bash .gitlab/scripts/check-attribution.sh
+    - section_end "attribution"
+
+# Project voice over the markdown a change touches, its commit messages and
+# the merge request description. The changesets folder and the changelog are
+# generated text.
+lint:prose:
+  image: node:22.23.5
+  stage: lint
+  interruptible: true
+  variables:
+    GIT_DEPTH: 0
+    PROSE_LINT_GLOB: "!{.changeset/**,CHANGELOG.md}"
+  cache:
+    key: vale-3.17.1
+    paths:
+      - .vale/
+  script:
+    - section_start "prose" "Linting prose with Vale"
+    - bash .gitlab/scripts/install-vale.sh .vale/bin .vale/styles
+    # A branch pipeline carries commit messages that are already merged, so a
+    # finding there is one nobody can act on. The merge request is the gate.
+    - if [ -n "${CI_MERGE_REQUEST_IID:-}" ]; then prose_args=""; else prose_args="--skip-commits"; fi
+    - bash .gitlab/scripts/lint-prose.sh $prose_args
+    - section_end "prose"
+
+# Links in the tracked markdown. Report only, as .lychee.toml explains. The
+# binary is pinned and verified by checksum, as gitleaks and actionlint are.
+lint:links:
+  stage: lint
+  image: alpine:3.21
+  interruptible: true
+  allow_failure: true
+  variables:
+    LYCHEE_VERSION: '0.24.2'
+    LYCHEE_SHA256: '73657a111819a30c47c08352896796f23d64e4eb2b3ed39b6d32149241566fc5'
+  script:
+    - section_start "lychee" "Checking links"
+    - apk add --no-cache curl tar git > /dev/null
+    - curl -sSLo lychee.tar.gz "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-x86_64-unknown-linux-musl.tar.gz"
+    - echo "${LYCHEE_SHA256}  lychee.tar.gz" | sha256sum -c -
+    - tar -xzf lychee.tar.gz
+    - ./lychee-x86_64-unknown-linux-musl/lychee --config .lychee.toml $(git ls-files '*.md')
+    - section_end "lychee"
+
+#
+# --- Secret detection ---
+#
+
+secret-detection:
+  stage: lint
+  image: alpine:3.21
+  interruptible: true
+  dependencies: []
+  variables:
+    # Full history. gitleaks scans commits, and a shallow clone would hide
+    # every secret committed before the window.
+    GIT_DEPTH: 0
+    GITLEAKS_VERSION: '8.30.1'
+    GITLEAKS_SHA256: '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb'
+  script:
+    - section_start "gitleaks" "Scanning for committed secrets"
+    - apk add --no-cache curl tar git > /dev/null
+    - curl -sSLo gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+    - echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+    - tar -xzf gitleaks.tar.gz gitleaks
+    # Scoped to this branch's history. The runner can hold other refs, and an
+    # unscoped scan reports commits this pipeline is not testing.
+    - ./gitleaks detect --source . --log-opts=HEAD --no-banner --redact --verbose
+    - section_end "gitleaks"
+    # A scan that finds nothing looks identical to a scan that cannot find
+    # anything. Plant three credentials outside the repository and assert all
+    # three are reported, so a bad download, a config change or a widened
+    # allowlist fails the job instead of passing it quietly.
+    #
+    # Each value is split across its own prefix so no fragment in this file
+    # triggers the rule it is meant to exercise: the repository scan above
+    # runs over this file too, and a canary that flags itself would need an
+    # ignore entry, which is the thing being guarded against.
+    #
+    # Fixed values, not generated ones. Detection is keyword-driven rather
+    # than entropy-driven, so a generated credential fires only sometimes and
+    # presents as flake. A value verified once keeps firing.
+    #
+    # Invented, not copied from any vendor's documentation: gitleaks
+    # allowlists documentation keys, and a canary built from one is inert in
+    # exactly the way this check exists to catch.
+    - section_start "canary" "Checking that the scanner still detects"
+    - |
+      canary="$(mktemp -d)"
+      pat="gh""p_8fK2mQ7xR4tV9nB3jH6yW1sZ5cD8gL0aE4uY"
+      stripe="sk""_live_51aBcD2eFgH3iJkL4mNoP5qR6sTuV7wXyZ8a"
+      slack="xo""xb-263594753641-2529420432-J1n4h6a9pQrStUvWxYz1AbCd"
+      printf 'a = "%s"\nb = "%s"\nc = "%s"\n' "$pat" "$stripe" "$slack" > "$canary/canary.txt"
+      ./gitleaks detect --no-git --source "$canary" --no-banner --redact \
+        --report-format json --report-path "$canary/report.json" || true
+      found=$(grep -c '"RuleID"' "$canary/report.json" || true)
+      rm -rf "$canary"
+      if [ "$found" != "3" ]; then
+        echo "The canary planted 3 credentials and gitleaks reported $found."
+        echo "The scan above proves nothing while this is true."
+        exit 1
+      fi
+      echo "Canary detected 3 of 3 planted credentials."
+    - section_end "canary"
+
+#
+# --- Test ---
+#
+
+test:unit:
+  extends: .node
+  stage: test
+  needs: []
+  script:
+    - section_start "jest" "Running the unit and accessibility tests"
+    - npm test -- --reporters=default --reporters=jest-junit --runInBand
+    - section_end "jest"
+  artifacts:
+    when: always
+    reports:
+      junit: reports/junit/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 1 week
+  # Puts the coverage percentage in the merge request widget, where a drop is
+  # visible to a reviewer who was never going to open the job log.
+  coverage: '/All files\s*\|\s*([\d.]+)/'
+
+# The committed theme is what a site gets: the package ships dist/umami.css
+# rather than building it on install. Rebuilding it here and comparing proves
+# the committed file is the one the Sass compiles to, and the size budget in
+# .size-limit.json makes a heavier theme visible at review.
+test:theme:
+  extends: .node
+  stage: test
+  needs: []
+  script:
+    - section_start "build" "Compiling the theme and comparing it with the committed file"
+    - npm run build
+    - git diff --exit-code --stat -- dist/
+    - section_end "build"
+    - section_start "size" "Checking the stylesheets against their budget"
+    - npm run size
+    - section_end "size"
+
+# A published install reads the package's `files` allowlist and runs none of
+# its development scripts; a file: install and the unit tests do neither.
+# This is the only job that proves the package a site downloads installs and
+# holds what module.js points at.
+test:pack:
+  extends: .node
+  stage: test
+  needs: []
+  script:
+    - section_start "pack" "Packing and installing the tarball"
+    - npm pack
+    - mkdir -p "$CI_PROJECT_DIR/pack-check" && mv ./*.tgz "$CI_PROJECT_DIR/pack-check/pkg.tgz"
+    - cd "$CI_PROJECT_DIR/pack-check" && npm init -y > /dev/null
+    - npm install ./pkg.tgz --legacy-peer-deps --no-audit --no-fund
+    - PKG=node_modules/druxt-ui-mami
+    - test -f "$PKG/module.js" && test -f "$PKG/dist/umami.css"
+    - test "$(ls "$PKG/components" | wc -l)" = "$(ls "$CI_PROJECT_DIR/components" | wc -l)"
+    - test ! -e "$PKG/test" && test ! -e "$PKG/scripts" && test ! -e "$PKG/src"
+    - node -e "const m = require('druxt-ui-mami'); if (typeof m !== 'function' || m.meta.name !== 'druxt-ui-mami') process.exit(1)"
+    - section_end "pack"

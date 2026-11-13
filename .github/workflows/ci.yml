@@ -1,0 +1,135 @@
+---
+name: CI
+
+# The same lint and test set as .gitlab-ci.yml. This repository is mirrored
+# here and releases will be cut here, so both hosts have to agree. Nothing on
+# this side lints this file: the GitLab pipeline runs actionlint over it in
+# return.
+
+on:
+  push:
+    branches: [0.x]
+  # No branch filter: a pull request into any base runs CI. A stacked pull
+  # request targets the branch below it rather than 0.x, and a filter here
+  # would leave it untested but green.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      # Actions are pinned to commit SHAs, not tags. A tag is a mutable
+      # reference to code that runs with this repository's credentials.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          persist-credentials: false
+          # The attribution and prose checks read the pull request's own
+          # commits, so its base has to be present.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # corepack reads the packageManager field, so the manager the lockfile
+      # was written by is the one that installs it.
+      - run: corepack enable && corepack prepare --activate
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npm run lint:js
+
+      - run: npm run lint:format
+
+      - run: npm run lint:md
+
+      - run: npm run lint:cspell
+
+      - run: npm run lint:knip
+
+      # This repository is public, and its README is what people copy. A host
+      # only the author can reach must never reach a tracked file.
+      - run: npm run lint:private
+
+      # The work is the author's. No commit, pull request description or
+      # tracked file may credit an AI tool as author, co-author or generator.
+      - name: Check for AI attribution
+        env:
+          ATTRIBUTION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          ATTRIBUTION_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          MERGE_REQUEST_DESCRIPTION: ${{ github.event.pull_request.body }}
+        run: bash .gitlab/scripts/check-attribution.sh
+
+      # Project voice over the markdown a change touches, its commit messages
+      # and the pull request description.
+      - name: Lint prose
+        env:
+          PROSE_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          PROSE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          MERGE_REQUEST_DESCRIPTION: ${{ github.event.pull_request.body }}
+          PROSE_LINT_GLOB: "!{.changeset/**,CHANGELOG.md}"
+          # A push carries commit messages that are already merged, so a
+          # finding there is one nobody can act on. The pull request is where
+          # the gate applies.
+          PROSE_ARGS: ${{ github.event_name != 'pull_request' && '--skip-commits' || '' }}
+        run: |
+          bash .gitlab/scripts/install-vale.sh .vale/bin .vale/styles
+          bash .gitlab/scripts/lint-prose.sh ${PROSE_ARGS:+"$PROSE_ARGS"}
+
+      # What a site installs, audited on its own: see scripts/audit-shipped.mjs.
+      - run: npm run lint:audit
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: corepack enable && corepack prepare --activate
+
+      - run: npm ci --no-audit --no-fund
+
+      # The coverage floor in jest.config.js is what fails here.
+      - run: npm test -- --reporters=default --reporters=jest-junit --runInBand
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            reports/junit/
+            coverage/cobertura-coverage.xml
+
+      # The committed theme is the one the Sass compiles to, and within its
+      # size budget.
+      - name: Theme is up to date
+        run: |
+          npm run build
+          git diff --exit-code --stat -- dist/
+          npm run size
+
+      # The package a site downloads installs and holds what module.js
+      # points at.
+      - name: Pack and install
+        run: |
+          npm pack
+          mkdir -p pack-check && mv ./*.tgz pack-check/pkg.tgz
+          cd pack-check && npm init -y > /dev/null
+          npm install ./pkg.tgz --legacy-peer-deps --no-audit --no-fund
+          test -f node_modules/druxt-ui-mami/module.js
+          test -f node_modules/druxt-ui-mami/dist/umami.css
+          node -e "const m = require('druxt-ui-mami'); if (typeof m !== 'function') process.exit(1)"
