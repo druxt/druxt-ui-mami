@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "module.js",
+    "components/*.vue",
+    "scripts/*.mjs",
+    "test/**/*.test.js"
+  ],
+  "project": [
+    "module.js",
+    "components/**/*.vue",
+    "scripts/**/*.mjs",
+    "test/**/*.js"
+  ],
+  "ignoreDependencies": [
+    // Invoked by name from the pipelines and the jest-junit reporter flag,
+    // never imported. knip does not read pipeline YAML.
+    "jest-junit",
+    // The Vue 2 compiler that @vue/vue2-jest and @vue/test-utils resolve at
+    // runtime, kept at the same version as vue.
+    "vue-template-compiler",
+    // The Nuxt module is loaded by a site that has Nuxt. The peer is declared
+    // so a site on the wrong major is told so.
+    "nuxt"
+  ]
+}

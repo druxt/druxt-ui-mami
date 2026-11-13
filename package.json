@@ -15,7 +15,7 @@
     "hooks:install": "git config core.hooksPath .githooks",
     "lint": "npm run lint:js && npm run lint:format && npm run lint:md && npm run lint:cspell && npm run lint:private && npm run lint:attribution && npm run lint:knip",
     "lint:attribution": "bash .gitlab/scripts/check-attribution.sh",
-    "lint:audit": "npm audit --omit=dev --audit-level=high",
+    "lint:audit": "node scripts/audit-shipped.mjs",
     "lint:commit": "commitlint",
     "lint:cspell": "cspell lint --no-progress --no-must-find-files --gitignore --dot \"**/*.{js,mjs,vue,json,jsonc,md,yml,yaml,scss}\"",
     "lint:format": "prettier --check \"**/*.{js,mjs,vue,json,jsonc,md,yml,yaml,scss}\"",
